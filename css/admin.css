@@ -1,0 +1,236 @@
+.zapier-thinking{
+	display: none;
+	width: 100%;
+	height: 100%;  
+    position: absolute; 
+    opacity: .5;
+    background-color: #000;
+    text-align: center;
+    margin: -10px;
+}
+.zapier-thinking .loader-text{
+	position: relative;
+    top: 42%;
+    color: white;
+}
+.zapier-thinking .loader
+{
+	background-image: url(../img/ajax-loader.gif);
+	background-repeat: no-repeat;
+	width: 30px;
+    height: 30px;
+    position: absolute;
+    background-size: cover;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+.zapier-thinking.is-active{
+	display: block;
+}
+.wp-custom-zapier-settings-wrap{
+	box-shadow: 1px 1px 1px 1px;
+	float: left;
+	width: 98%;
+	min-height: 85vh;
+	position: relative;
+	padding: 10px;
+}
+.wp-custom-zapier-settings-wrap select:focus,
+.wp-custom-zapier-settings-wrap input:focus {
+    border-color: #a81e20;
+    color: #016087;
+    box-shadow: 0 0 0 1px #770f12;
+}
+.wp-custom-zapier-settings-wrap input[type='submit'],
+.wp-custom-zapier-settings-wrap .button-primary{
+	/*background: #d81013;
+    border-color: #ed3535;*/
+    box-shadow: 0 0 0 1px #770f12;
+    margin: 2px 1px;
+}
+.wp-custom-zapier-settings-wrap .button-secondary.wp-hide-pw{
+	border-color: #e62f30;
+    color: #e92d2d;
+}
+
+.wp-custom-zapier-settings-wrap .button-secondary.wp-hide-pw:focus,
+.wp-custom-zapier-settings-wrap .button-secondary.wp-hide-pw:hover{
+	color: #92181c;
+    border-color: #92181c;
+}
+.wp-custom-zapier-settings-wrap .button-primary.focus, 
+.wp-custom-zapier-settings-wrap .button-primary.hover, 
+.wp-custom-zapier-settings-wrap .button-primary:focus, 
+.wp-custom-zapier-settings-wrap .button-primary:hover {
+    color: #fff;
+	background: #a81e20;
+}
+.wp-custom-zapier-settings-wrap h2.title{
+    padding: 20px;
+    border-bottom: 1px solid #aaa;
+    line-height: inherit; 
+}
+.wrap.wp-custom-zapier-settings-wrap .logo {
+    max-height: 94px;
+    text-align: center;
+    font-size: inherit;
+    margin: 0 auto;
+    display: block;
+    padding:5px;
+}
+.wp-custom-zapier-settings-wrap .body{
+    padding: 10px;
+}
+.wp-custom-zapier-settings-wrap input,
+.wp-custom-zapier-settings-wrap select
+{
+	min-width:400px;
+}
+.wp-custom-zapier-settings-wrap .spinner.is-active
+{
+	background-size: initial;
+	height: 65px;
+	width: 65px;
+}
+.wp-custom-zapier-settings-wrap .placeholder.error{
+	border:1px solid red;
+}
+.wp-custom-zapier-settings-wrap .control-label
+{
+	float: left;
+	display: inline;
+	width: 200px;
+	vertical-align: top;
+	font-weight: bold;
+}
+.wp-custom-zapier-settings-wrap .form-group
+{
+	margin-bottom: 5px;
+}
+.wp-custom-zapier-settings-wrap .col-md-10{
+	width: 83.33%;
+	float: left;
+}
+.wp-custom-zapier-settings-wrap .col-md-6{
+	width: 50%;
+	float: left;
+}
+.wp-custom-zapier-settings-wrap .col-md-5{
+	width: 41.55%;
+	float: left;
+}
+.wp-custom-zapier-settings-wrap .col-md-3{
+	width: 25%;
+	float: left;
+}
+.wp-custom-zapier-settings-wrap .mt-5{
+	margin-top: 5px;
+}
+.wp-custom-zapier-settings-wrap .ml-5,
+.wp-custom-zapier-settings-wrap .ml-md-5{
+	margin-left: 5px
+}
+.wp-custom-zapier-settings-wrap .mr-5{
+	margin-right: 5px;
+}
+.float-left{
+	float: left;
+}  
+.w-80{
+	width: 80% !important;
+	min-width: inherit !important;
+}
+.w-100{
+	width: 100% !important;
+	min-width: inherit !important;
+} 
+.wp-custom-zapier-settings-wrap .dashicons-move{
+	width: 15px;
+    float: left;
+    border: 1px solid;
+    padding: 5px;
+    padding-left: 10px;
+    padding-right: 15px;
+    margin-top: -7px;
+}
+.wp-custom-zapier-settings-wrap .text-center
+{
+	text-align:center;
+}
+.wp-custom-zapier-settings-wrap .col-md-12{
+	width: 100%;
+	float: left;
+}
+.wp-custom-zapier-settings-wrap .py-0{
+	padding-top: 0;
+	padding-bottom: 0;
+}
+.wp-custom-zapier-settings-wrap .my-0{
+	margin-top: 0;
+	margin-bottom: 0;
+}
+.wp-custom-zapier-settings-wrap .pt-5{
+	padding-top: 5px;
+}
+.wp-custom-zapier-settings-wrap .float-right{
+	float: right;
+}
+.wp-custom-zapier-settings-wrap table{
+	display: flex;
+    flex-flow: column;
+    width: 100%;
+    height: 70vh;
+}
+.wp-custom-zapier-settings-wrap table thead{
+	padding-right: 13px;
+    flex: 0 0 auto;
+}
+.wp-custom-zapier-settings-wrap table tbody{
+	flex: 1 1 auto;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.wp-custom-zapier-settings-wrap table tr{
+	width: 100%;
+    display: table;
+    table-layout: fixed;
+}
+@media(max-width: 768px){
+	.wp-custom-zapier-settings-wrap
+	{
+		width: 97%;
+	}
+	.wp-custom-zapier-settings-wrap .ml-md-5{
+		margin-left: 0;
+	}
+	.wp-custom-zapier-settings-wrap .col-md-6,
+	.wp-custom-zapier-settings-wrap .col-md-5,
+	.wp-custom-zapier-settings-wrap .col-md-10,
+	.wp-custom-zapier-settings-wrap .col-md-3{
+		width: 100%;
+		float: left;
+	}
+	.wp-custom-zapier-settings-wrap .form-control{
+		width: 100%;
+	}
+	.wp-custom-zapier-settings-wrap .control-label,
+	.wp-custom-zapier-settings-wrap .form-control{
+		display: block;
+		vertical-align: baseline;
+	}
+	.wp-custom-zapier-settings-wrap{
+		margin-right: 8px;
+	}
+	.wp-custom-zapier-settings-wrap input,
+	.wp-custom-zapier-settings-wrap select{
+		min-width:inherit;
+		width: 100%;
+	} 
+	.wp-custom-zapier-settings-wrap .wp-pwd button.wp-hide-pw{
+		right: 0;
+		top: 16px;
+	}
+}
