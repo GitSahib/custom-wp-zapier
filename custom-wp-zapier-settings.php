@@ -103,6 +103,9 @@ class Settings
     }
     private function print_input($title, $method, $style='', $required = '')
     { 
+        $title = esc_html($title);
+        $style = esc_html($style);
+        $required = esc_html($required);
         printf('
                 <div class="form-group" %s id="%s">
                     <label class="control-label %s">%s</label>',
@@ -113,10 +116,11 @@ class Settings
 
     private function api_security_key_callback()
     {
+        $name = esc_html(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
+        $value = esc_html($this->get_settings('security_key'));
         printf( 
             '<input id="security_key" class="regular-text" name="%s[security_key]" value="%s" />',
-            CUSTOM_WP_ZAPIER_SETTINGS_GROUP, 
-            $this->get_settings('security_key')
+            $name,$value            
         );
     }
 

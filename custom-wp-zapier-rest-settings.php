@@ -42,7 +42,8 @@ class RestSettings
 	        array( 
 	            array(
 	                'methods' => WP_REST_Server::CREATABLE,
-	                'callback' => array($this, 'save_sf_post'), 
+	                'callback' => array($this, 'save_sf_post'),
+	                'permission_callback' => [$this, 'check_security_key']
 	            )
 	        )
 	    );
@@ -52,7 +53,8 @@ class RestSettings
 	        array( 
 	            array(
 	                'methods' => WP_REST_Server::CREATABLE,
-	                'callback' => array($this, 'save_settings'), 
+	                'callback' => array($this, 'save_settings'),
+	                'permission_callback' => [$this, 'check_nonce']
 	            )
 	        )
 	    );
@@ -62,11 +64,32 @@ class RestSettings
 	        array( 
 	            array(
 	                'methods' => WP_REST_Server::READABLE,
-	                'callback' => array($this, 'get_mappings'), 
+	                'callback' => array($this, 'get_mappings'),
+	                'permission_callback' => [$this, 'check_nonce']
 	            )
 	        )
 	    );
 	}	
+	
+	public function check_nonce(WP_REST_Request $request)
+	{
+        return wp_verify_nonce($request->get_header('x_wp_nonce'), 'wp_rest');
+    }
+
+    public function check_security_key(WP_REST_Request $request)
+	{
+		$params = Utils::sanitize_post_values(['security_key' => '']);
+		if(empty($params['security_key']))
+		{
+			return FALSE;
+		}
+		$settings = (array)get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
+		if(empty($settings['security_key']))
+		{
+			return FALSE;
+		}
+        return $settings['security_key'] === $params['security_key'];
+    }
 
 	public function save_settings()
     { 
@@ -172,17 +195,6 @@ class RestSettings
 		if( empty($request['Request_ID_18_Digit']) )
 		{
 			$response['Messages'][] = 'Not doing anything, Request Id was not supplied.';
-			return "";
-		}
-
-		$settings = (array)get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
-
-		if( empty($request['security_key']) || 
-			empty($settings) || 
-			$settings['security_key'] != $request['security_key']
-		)
-		{
-			$response['Messages'][] = 'Not authorized.';
 			return "";
 		}
 
