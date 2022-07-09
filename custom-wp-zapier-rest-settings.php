@@ -206,7 +206,7 @@ class RestSettings
 			SELECT p.id 
 			FROM $wpdb->posts p
 			INNER JOIN $wpdb->postmeta pm ON p.id = pm.post_id
-			WHERE pm.meta_key = '%s' AND pm.meta_value = '%s' AND p.post_status != 'trash'",
+			WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status != 'trash'",
 			$meta_key, $meta_value
 		);
 		
@@ -219,7 +219,7 @@ class RestSettings
         {
         	$post_author = $request['Account_Wordpress_User__c'];
         	$user_sql = $wpdb->prepare("
-	        	SELECT id FROM $wpdb->users WHERE user_login = '%s'
+	        	SELECT id FROM $wpdb->users WHERE user_login = %s
 	        ", $post_author);
 	        //get the post author
         	$post_author = $wpdb->get_var($user_sql);
@@ -392,11 +392,11 @@ class RestSettings
 				array(
 					"
 					SELECT 
-						%s,
+						%d,
 						term_taxonomy_id,
 						1
 					FROM $wpdb->term_taxonomy 
-					WHERE taxonomy = '%s' AND term_id IN (
+					WHERE taxonomy = %s AND term_id IN (
 						SELECT term_id FROM $wpdb->terms WHERE name IN($placeholders)
 					)", 
 					$post_id, 
@@ -407,9 +407,9 @@ class RestSettings
 
 		$this->debugSQL($response, $termsTaxanonmySqls);
 
-		$finalSQL = $wpdb->prepare("
-			REPLACE INTO $wpdb->term_relationships(object_id, term_taxonomy_id, term_order) 
-		");
+		$finalSQL = "
+			REPLACE INTO $wpdb->term_relationships(object_id, term_taxonomy_id, term_order)
+		";
 
 		$finalSQL .= implode("\nUNION\n", $termsTaxanonmySqls);		
 		
@@ -435,7 +435,7 @@ class RestSettings
     			SELECT p.id as listing_id 
     			FROM $wpdb->posts p
     			INNER JOIN $wpdb->postmeta pm ON p.id = pm.post_id
-    			WHERE pm.meta_key = '%s' AND pm.meta_value = '%s' AND p.post_title = '%s'",
+    			WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_title = %s",
     			$meta_key, $meta_value, $post_title
     		);
     		$parent_listing_id = $wpdb->get_var($sql);
@@ -450,9 +450,9 @@ class RestSettings
     		//check if the relation already exists then bail out
     		$sql = $wpdb->prepare("SELECT 1 
     				FROM $listing_relations 
-    				WHERE parent_listing_id = %s 
-    					AND child_listing_id = %s 
-    					AND field_key = '%s'",
+    				WHERE parent_listing_id = %d
+    					AND child_listing_id = %d
+    					AND field_key = %s",
     					$parent_listing_id, $post_id, $field_key
     				);
     		$exists = $wpdb->get_var($sql);
@@ -465,7 +465,7 @@ class RestSettings
     		$sql = $wpdb->prepare("
     				SELECT MAX(item_order) AS item_order
     				FROM $listing_relations 
-    				WHERE  child_listing_id = %s AND field_key = '%s'",
+    				WHERE  child_listing_id = %d AND field_key = %s",
     					$post_id, $field_key
     		);
     		$item_order = $wpdb->get_var($sql);
@@ -485,7 +485,7 @@ class RestSettings
 	    			field_key, 
 	    			item_order
 	    		) 
-	    		VALUES(%s, %s, '%s', %s)",
+	    		VALUES(%d, %d, %s, %d)",
 	    		$parent_listing_id, $post_id, $field_key, $item_order
 	    	);
     		$wpdb->query($sql);
@@ -499,7 +499,7 @@ class RestSettings
     	$fields = $this->api_schedule_fields;
     	$events_table = $wpdb->prefix."mylisting_events";
     	$event_sql = $wpdb->prepare("
-    		SELECT  * FROM $events_table WHERE listing_id = %s
+    		SELECT  * FROM $events_table WHERE listing_id = %d
     	", $post_id);
 
     	$event = (array)$wpdb->get_row($event_sql);
