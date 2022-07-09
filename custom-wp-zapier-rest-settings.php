@@ -10,6 +10,9 @@ use CustomWpZapier\Mappings\Mappings;
 if ( ! function_exists( 'post_exists' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/post.php' );
 }
+if (! function_exists("current_user_can")){
+	require_once (ABSPATH. 'wp-includes/capabilities.php');
+}
 class RestSettings
 {
 	private $slug = CUSTOM_WP_ZAPIER_SETTINGS_MAIN_PAGE; 
@@ -73,7 +76,8 @@ class RestSettings
 	
 	public function check_nonce(WP_REST_Request $request)
 	{
-        return wp_verify_nonce($request->get_header('x_wp_nonce'), 'wp_rest');
+        return wp_verify_nonce($request->get_header('x_wp_nonce'), 'wp_rest') && 
+        	   current_user_can( 'manage_options' );
     }
 
     public function check_security_key(WP_REST_Request $request)
