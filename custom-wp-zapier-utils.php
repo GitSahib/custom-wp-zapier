@@ -200,4 +200,68 @@ class Utils
 
         return $link;
     }
+
+    /**
+    * returns TRUE if valid timezone was passed
+    * takes $timezone string
+    *
+    * Usage example:
+    * {America/Los_Angeles} # returns TRUE
+    * {something wrong} # returns FAKSE
+    */
+    static function is_valid_time_zone($timezone)
+    {
+        if (in_array($timezone, \DateTimeZone::listIdentifiers())) {
+            return TRUE;
+        }
+        else 
+        {
+            return FALSE;
+        }
+    }
+
+    /**
+    * returns time TRUE if valid time was passed
+    * takes $time string
+    *
+    * Usage example:
+    * {09:00 AM} # returns TRUE
+    * {something wrong} # returns FALSE
+    */
+    static function is_valid_time($time, $format = 'h:i A')
+    {
+        $d = \DateTime::createFromFormat($format, $time);
+        return $d ? TRUE : FALSE;
+    }
+
+    /**
+    * returns time TRUE if valid date was passed
+    * takes $date string
+    *
+    * Usage example:
+    * {2022-08-01T00:00:00Z} # returns TRUE
+    * {something wrong} # returns FALSE
+    */
+    static function is_valid_date($date, $format = "Y-m-dH:i:s")
+    {  
+        if($format == "Y-m-dH:i:s")
+        {
+            $date = preg_replace(["/T/", "/.[0-9]{3}Z$/", "/Z/"], "", $date);
+        }
+        $d = \DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) == $date;
+    }
+
+    /**
+    * returns time TRUE if valid unit was passed
+    * takes $dateUnit string
+    *
+    * Usage example:
+    * {DAY} # returns TRUE
+    * {something wrong} # returns FALSE
+    */
+    static function is_valid_date_unit($unit)
+    { 
+        return in_array(strtoupper($unit), ['DAY', 'WEEK', 'MONTH', 'YEAR']);
+    }
 }

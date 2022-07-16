@@ -101,7 +101,8 @@ class RestSettings
         
         $response = array(
             'Status' => 1,
-            'Messages' => []
+            'Messages' => [],
+            'DataRecieved' => $request
         );
 
         $settings = get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
@@ -155,7 +156,8 @@ class RestSettings
         $request = Utils::sanitize_post_values( $this->get_mapped_fields() );        
         $response = array(
             'Status' => 1,
-            'Messages' => []
+            'Messages' => [],
+            'DataRecieved' => $request
         );        
         $post_id = $this->save_or_update_post($request, $response);
         //stop processing if no post was found or created
@@ -348,7 +350,7 @@ class RestSettings
     			$request[$f] = Utils::get_url($request[$f]);
     		}
 
-    		if(in_array($f, $date_fields))
+    		if(in_array($f, $date_fields) && Utils::is_valid_date($request[$f]))
 			{
 				$request[$f] = Utils::utc_date_to_my_sql($request[$f]);
 			}
@@ -415,6 +417,12 @@ class RestSettings
 			REPLACE INTO $wpdb->term_relationships(object_id, term_taxonomy_id, term_order)
 		";
 
+		if(empty($termsTaxanonmySqls))
+		{
+			$response["Messages"][] = 'No taxonomy was found in the request.';
+			return;
+		}
+		
 		$finalSQL .= implode("\nUNION\n", $termsTaxanonmySqls);		
 		
 		$this->debugSQL($response, $finalSQL);
@@ -506,11 +514,9 @@ class RestSettings
     		SELECT  * FROM $events_table WHERE listing_id = %d
     	", $post_id);
 
-    	$event = (array)$wpdb->get_row($event_sql);
-    	if(empty($event['id']))
-    	{
-    		$event = [];
-    	}
+    	$oldEvent = (array)$wpdb->get_row($event_sql);
+
+    	$event = [];
 
     	foreach($fields as $f => $m)
     	{
@@ -521,23 +527,47 @@ class RestSettings
     		switch ($m) 
     		{
     			case 'frequency':
-    				$event[$m] = $request[$f];
+    				$frequency = $request[$f];
+    				if(is_numeric($frequency))
+    				{
+    					$event[$m] = $frequency;
+    				}
+    				else
+    				{
+    					$response['Messages'][] = "Invalid frequency $frequency";
+    				}
     				break;
     			case 'repeat_unit':
-    				$event[$m] = strtoupper(Utils::singularize($request[$f]));
+    				$unit = Utils::singularize($request[$f]);
+    				if(Utils::is_valid_date_unit($unit))
+    				{
+    					$event[$m] = strtoupper($unit);
+    				}
+    				else
+    				{
+    					$response['Messages'][] = "Invalid unit $unit";
+    				}
     				break;
     			default:
-    				$event[$m] = Utils::utc_date_to_my_sql($request[$f]);
+    				$date = $request[$f];
+    				if(Utils::is_valid_date($date))
+    				{
+    					$event[$m] = Utils::utc_date_to_my_sql($date);
+    				}
+    				else
+    				{
+    					$response['Messages'][] = "Invalid $f date $date";
+    				}				
     				break;
     		}
-    	} 
+    	}
 
     	if(empty($event))
     	{    		
     		return;    		
     	}
     	
-		if(empty($event['id']))
+		if(empty($oldEvent['id']))
 		{ 
 			$event['listing_id'] = $post_id;
 			$event['field_key'] = 'deal-dates';
@@ -547,7 +577,7 @@ class RestSettings
 		}
 		else
 		{  
- 			$wpdb->update($events_table, $event, ["id" => $event['id']]);
+ 			$wpdb->update($events_table, $event, ["id" => $oldEvent['id']]);
 			$response['Messages'][] = "Updated event schedule. ".json_encode($event);
 		}
     }
@@ -555,11 +585,10 @@ class RestSettings
     private function save_work_hours($post_id, $request, &$response){
     	
     	$days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    	$timezone = 'America/Los_Angeles';    	
+    	$timezone = '';    	
     	$work_hours = get_post_meta($post_id, '_work_hours', true);
 
     	$work_hours = (array)$work_hours;
-
     	if(empty($work_hours['Monday']))
     	{
     		$work_hours = [];
@@ -570,33 +599,59 @@ class RestSettings
     				'status' => 'closed-all-day'
     			];
     		}
-    		$work_hours["timezone"] = $timezone;
+    		$work_hours["timezone"] = 'America/Los_Angeles';
     		add_post_meta($post_id, '_work_hours', $work_hours);
     		$response['Messages'][] = "Added work_hours: ".json_encode($work_hours);
     	}
 
     	$should_update_hours = FALSE;
-
+    	
     	if(!empty($request['Timezone__c']))
+    	{
+    		$timezone = $request['Timezone__c'];
+    	}
+
+    	if(Utils::is_valid_time_zone($timezone))
     	{
     		$work_hours['timezone'] = $timezone;
     		$should_update_hours = TRUE;
+    	}
+    	else if(!empty($timezone))
+    	{
+    		$response['Messages'][] = "Invalid timezone $timezone";
     	}
 
     	foreach($days as $day)
     	{
     		$status = "";
     		$duration = array();
-
+    		$open_time = "";
+    		$close_time = "";
     		if(!empty($request[$day."_Open__c"]))
+    		{
+    			$open_time = $request[$day."_Open__c"];
+    		}
+    		if(!empty($request[$day."_Close__c"]))
+    		{
+    			$close_time = $request[$day."_Close__c"];
+    		}
+    		if(Utils::is_valid_time($open_time))
     		{
     			$status = "enter-hours";
     			$duration["from"] = Utils::am_pm_to_24($request[$day."_Open__c"]);
     		}
-    		if(!empty($request[$day."_Close__c"]))
+    		else
+    		{
+    			$response['Messages'][] = "Invalid open_time for $day $open_time";
+    		}
+    		if(Utils::is_valid_time($close_time))
     		{
     			$status = "enter-hours";
     			$duration["to"] = Utils::am_pm_to_24($request[$day."_Close__c"]);
+    		}
+    		else
+    		{
+    			$response['Messages'][] = "Invalid close_time for $day $close_time";
     		}
     		
     		if(empty($duration))
