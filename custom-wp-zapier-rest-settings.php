@@ -192,11 +192,6 @@ class RestSettings
 		$post_status = "draft";
         $post_author = "";
         $post_content = "";
-        if(empty($request['Ad_Title__c']))
-        {
-        	$response['Messages'][] = 'Not doing anything, deal title was not supplied.';
-			return ""; 
-		}
 		
 		if( empty($request['Request_ID_18_Digit']) )
 		{
@@ -220,6 +215,13 @@ class RestSettings
         //get the post id
         $post_id = $wpdb->get_var($post_sql);
         
+        //we can't create a post the empty title
+        if(empty($post_id) && empty($request['Ad_Title__c']))
+        {
+        	$response['Messages'][] = 'Not doing anything, deal title was not supplied.';
+			return ""; 
+		}
+
         //try finding the post author
         if(!empty($request['Account_Wordpress_User__c']))
         {
@@ -288,7 +290,7 @@ class RestSettings
     {
     	$meta = get_post_meta($post_id, $meta_key, true);
 			
-		if(empty($meta))
+		if(!isset($meta))
 		{
 			add_post_meta($post_id, $meta_key , $meta_value );
 		}
@@ -338,9 +340,25 @@ class RestSettings
     	$url_fields   = ['Wordpress_Account_Listing_Id__c', 'Menu__c', 'Website__c'];
     	$date_fields  = ['Promotion_Expiration_Date__c'];
     	$array_fields = ['Wordpress_Banner_URL_from_Account__c'];
+    	$int_fields   = ['Priority__c'];
     	foreach ($api_meta_fields as $f => $m) 
     	{
-    		if(empty($m) || empty($request[$f]))
+    		//if no mapping is found or the field is not posted then get back
+    		if(empty($m) || !isset($request[$f]))
+    		{
+    			continue;
+    		}
+    		//if it is an int field and is not numeric, get back but inform user
+    		if(in_array($f, $int_fields) && !is_numeric($request[$f]))
+    		{
+				$message = 'Invalid deal meta '. 
+    						$api_meta_fields[$f] ." = ". 
+    						(is_string($request[$f])? $request[$f] : json_encode($request[$f]));
+    			$response['Messages'][] = $message;
+    			continue;
+    		}
+    		//empty will return true for '0' so checking both
+    		if(!in_array($f, $int_fields) && empty($request[$f]))
 			{
 				continue;				
 			}
