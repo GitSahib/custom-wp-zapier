@@ -15,3 +15,4 @@ Custom WP Zapier is one stop solution for integrating apis to WP.
 Custom WP Zapier is simple small plugin which can listen to your API/Zapier webhooks and create wordpress posts. When a hook is fired from your api/zapier, the plugin can catch your mapped fields and create update, manage your wp products/jobs/posts/posts meta/texonomies. The current mapped list of fields is in your admin dashboard under the plugin settings menu. You will find what api fields are mapped to post, postmeta, taxonomy, listing hours, listing evets. The plugin works very well with [My Listing] theme and other themes for jobs or products.
 
 - Map salesforce api zaps from zapier example screenshot-2. 
+- Map salesforce api zaps from zapier example screenshot-3.
