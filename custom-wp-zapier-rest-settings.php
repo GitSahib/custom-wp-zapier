@@ -72,6 +72,30 @@ class RestSettings
 	            )
 	        )
 	    );
+
+	    register_rest_route( $namespace,
+	        '/save-mapping',
+	        array( 
+	            array(
+	                'methods' => WP_REST_Server::DELETABLE,
+	                'callback' => array($this, 'delete_mapping'),
+	                'args' => ['ApiFieldName', 'Type'],
+	                'permission_callback' => [$this, 'check_nonce']
+	            )
+	        )
+	    );
+
+	    register_rest_route( $namespace,
+	        '/save-mapping',
+	        array( 
+	            array(
+	                'methods' => WP_REST_Server::CREATABLE,
+	                'callback' => array($this, 'save_mapping'),
+	                'args' => ['ApiFieldName', 'WpFieldName', 'Type'],
+	                'permission_callback' => [$this, 'check_nonce']
+	            )
+	        )
+	    );
 	}	
 	
 	public function check_nonce(WP_REST_Request $request)
@@ -95,13 +119,14 @@ class RestSettings
         return $settings['security_key'] === $params['security_key'];
     }
 
-	public function save_settings()
+	public function save_settings(WP_REST_Request $request)
     { 
     	$request = Utils::sanitize_post_values(['security_key' => '', 'mappings' => '']);
         
         $response = array(
             'Status' => 1,
-            'Messages' => []
+            'Messages' => [],
+            'DataRecieved' => $request
         );
 
         $settings = get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
@@ -110,13 +135,8 @@ class RestSettings
         {            
             $settings['security_key'] = $request['security_key'];
         }
-
-        if(!empty($request['mappings']))
-        {
-        	$settings['mappings'] = $request['mappings'];
-        }
-
-        if(!empty($request['security_key']) || !empty($request['mappings']))
+        
+        if(!empty($request['security_key']))
         {
         	update_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP, $settings);
         }
@@ -132,22 +152,65 @@ class RestSettings
         );
         
         $settings = get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
-
-        if(!empty($settings['mappings']))
+        if(!isset($settings['Mappings']))
         {
-            $response['Mappings'] = $settings['mappings'];
-        }
-        else
-        {
-        	$response['Mappings'] = [
+            $settings['Mappings'] = [
         		'taxonomy' => Mappings::api_taxonomy_fields(),
-        		'meta' => array_merge(Mappings::api_meta_fields(), Mappings::api_workhour_fields()),
+        		'meta' => array_merge(
+        				Mappings::api_meta_fields(), 
+        				Mappings::api_workhour_fields()
+        		),
         		'post' => Mappings::api_post_fields(),
         		'schedule' => Mappings::api_schedule_fields()
         	];
+        	update_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP, $settings);
         }
-
+        $response['Mappings'] = $settings['Mappings'];
     	return rest_ensure_response($response);
+    }
+
+    public function save_mapping(WP_REST_Request $request)
+    {
+    	$request = Utils::sanitize_post_values([
+    		'ApiFieldName' => '', 
+    		'WpFieldName' => '',
+    		'Type' => ''
+    	]);
+    	$response = array(
+            'Status' => 1,
+            'Messages' => [],
+            'DataRecieved' => $request
+        );
+        $settings = get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
+        $mappings = $settings['Mappings'];
+        if(!isset($mappings[$request['Type']]))
+        {
+        	$mappings[$request['Type']] = [];
+        }
+        $mappings[$request['Type']][$request['ApiFieldName']] = $request['WpFieldName'];
+        $settings['Mappings'] = $mappings;
+        update_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP, $settings);
+        return rest_ensure_response($response);
+    }
+    
+    public function delete_mapping(WP_REST_Request $request)
+    {
+    	$request = Utils::sanitize_get_values([
+    		'ApiFieldName' => '',
+    		'Type' => ''
+    	]);
+
+    	$response = array(
+            'Status' => 1,
+            'Messages' => [],
+            'DataRecieved' => $request
+        );
+        $settings = get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
+        $mappings = $settings['Mappings'];
+        unset($mappings[$request['Type']][$request['ApiFieldName']]);
+        $settings['Mappings'] = $mappings;
+        update_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP, $settings);
+        return rest_ensure_response($response);
     }
 
     public function save_sf_post()
@@ -155,7 +218,8 @@ class RestSettings
         $request = Utils::sanitize_post_values( $this->get_mapped_fields() );        
         $response = array(
             'Status' => 1,
-            'Messages' => []
+            'Messages' => [],
+            'DataRecieved' => $request
         );        
         $post_id = $this->save_or_update_post($request, $response);
         //stop processing if no post was found or created
@@ -190,11 +254,6 @@ class RestSettings
 		$post_status = "draft";
         $post_author = "";
         $post_content = "";
-        if(empty($request['Ad_Title__c']))
-        {
-        	$response['Messages'][] = 'Not doing anything, deal title was not supplied.';
-			return ""; 
-		}
 		
 		if( empty($request['Request_ID_18_Digit']) )
 		{
@@ -218,6 +277,13 @@ class RestSettings
         //get the post id
         $post_id = $wpdb->get_var($post_sql);
         
+        //we can't create a post the empty title
+        if(empty($post_id) && empty($request['Ad_Title__c']))
+        {
+        	$response['Messages'][] = 'Not doing anything, deal title was not supplied.';
+			return ""; 
+		}
+
         //try finding the post author
         if(!empty($request['Account_Wordpress_User__c']))
         {
@@ -286,7 +352,7 @@ class RestSettings
     {
     	$meta = get_post_meta($post_id, $meta_key, true);
 			
-		if(empty($meta))
+		if(!isset($meta))
 		{
 			add_post_meta($post_id, $meta_key , $meta_value );
 		}
@@ -336,9 +402,25 @@ class RestSettings
     	$url_fields   = ['Wordpress_Account_Listing_Id__c', 'Menu__c', 'Website__c'];
     	$date_fields  = ['Promotion_Expiration_Date__c'];
     	$array_fields = ['Wordpress_Banner_URL_from_Account__c'];
+    	$int_fields   = ['Priority__c'];
     	foreach ($api_meta_fields as $f => $m) 
     	{
-    		if(empty($m) || empty($request[$f]))
+    		//if no mapping is found or the field is not posted then get back
+    		if(empty($m) || !isset($request[$f]))
+    		{
+    			continue;
+    		}
+    		//if it is an int field and is not numeric, get back but inform user
+    		if(in_array($f, $int_fields) && !is_numeric($request[$f]))
+    		{
+				$message = 'Invalid deal meta '. 
+    						$api_meta_fields[$f] ." = ". 
+    						(is_string($request[$f])? $request[$f] : json_encode($request[$f]));
+    			$response['Messages'][] = $message;
+    			continue;
+    		}
+    		//empty will return true for '0' so checking both
+    		if(!in_array($f, $int_fields) && empty($request[$f]))
 			{
 				continue;				
 			}
@@ -348,7 +430,7 @@ class RestSettings
     			$request[$f] = Utils::get_url($request[$f]);
     		}
 
-    		if(in_array($f, $date_fields))
+    		if(in_array($f, $date_fields) && Utils::is_valid_date($request[$f]))
 			{
 				$request[$f] = Utils::utc_date_to_my_sql($request[$f]);
 			}
@@ -415,6 +497,12 @@ class RestSettings
 			REPLACE INTO $wpdb->term_relationships(object_id, term_taxonomy_id, term_order)
 		";
 
+		if(empty($termsTaxanonmySqls))
+		{
+			$response["Messages"][] = 'No taxonomy was found in the request.';
+			return;
+		}
+		
 		$finalSQL .= implode("\nUNION\n", $termsTaxanonmySqls);		
 		
 		$this->debugSQL($response, $finalSQL);
@@ -497,20 +585,58 @@ class RestSettings
     	}
     }
 
+    private function read_frequencies($frequency)
+    {
+    	$frequencies = explode(",", $frequency);
+		//lets trim the individual frequencies
+		$frequencies = array_map(function($f){
+			return trim($f);
+		}, $frequencies);		
+		//return valid ones
+		$frequencies = array_filter($frequencies, function($f){
+			return is_numeric($f);
+		});
+		return $frequencies;
+    }
+
+    private function read_units($units)
+    {
+    	$units = explode(",", $units);
+    	//lets trim the individual units and signularize them
+    	$units = array_map(function($u){
+    		return strtoupper(Utils::singularize(trim($u)));
+    	}, $units);    	
+    	//return valid ones
+    	$units = array_filter($units, function($u){
+			return Utils::is_valid_date_unit($u);
+		});
+		return $units;
+    }
+
+    private function read_dates($dates)
+    {
+    	$dates = explode(",", $dates);
+		//lets trim the individual frequencies
+		$dates = array_map(function($f){
+			return trim($f);
+		}, $dates);
+		//return valid ones
+		$dates = array_filter($dates, function($d){
+			return Utils::is_valid_date($d);
+		});
+		//map to mysql dates
+		$dates = array_map(function($d){
+			return  Utils::utc_date_to_my_sql($d);
+		}, $dates);
+		
+		return $dates;
+    }
+
     private function save_schedule($post_id, $request, &$response)
     {
     	global $wpdb;
     	$fields = $this->api_schedule_fields;
-    	$events_table = $wpdb->prefix."mylisting_events";
-    	$event_sql = $wpdb->prepare("
-    		SELECT  * FROM $events_table WHERE listing_id = %d
-    	", $post_id);
-
-    	$event = (array)$wpdb->get_row($event_sql);
-    	if(empty($event['id']))
-    	{
-    		$event = [];
-    	}
+    	$event = [];
 
     	foreach($fields as $f => $m)
     	{
@@ -521,45 +647,101 @@ class RestSettings
     		switch ($m) 
     		{
     			case 'frequency':
-    				$event[$m] = $request[$f];
+    				$frequencies = $this->read_frequencies($request[$f]);
+    				if(!empty($frequencies))
+    				{
+    					$event[$m] = $frequencies;
+    				}
+    				else
+    				{
+    					$response['Messages'][] = "Invalid frequency ".$request[$f];
+    				}
     				break;
     			case 'repeat_unit':
-    				$event[$m] = strtoupper(Utils::singularize($request[$f]));
+    				$units = $this->read_units($request[$f]);
+    				if(!empty($units))
+    				{
+    					$event[$m] = $units;
+    				}
+    				else
+    				{
+    					$response['Messages'][] = "Invalid unit ".$request[$f];
+    				}
     				break;
     			default:
-    				$event[$m] = Utils::utc_date_to_my_sql($request[$f]);
+    				$dates = $this->read_dates($request[$f]);
+    				if(!empty($dates))
+    				{
+    					$event[$m] = $dates;
+    				}
+    				else
+    				{
+    					$response['Messages'][] = "Invalid $f dates ".$request[$f];
+    				}				
     				break;
     		}
-    	} 
+    	}
 
     	if(empty($event))
     	{    		
     		return;    		
     	}
     	
-		if(empty($event['id']))
-		{ 
-			$event['listing_id'] = $post_id;
-			$event['field_key'] = 'deal-dates';
-			$event['repeat_unit'] = empty($event['repeat_unit']) ? "NONE": $event['repeat_unit'];
-			$wpdb->insert($events_table, $event);
-			$response['Messages'][] = "Inserted event schedule. ".json_encode($event);
-		}
-		else
-		{  
- 			$wpdb->update($events_table, $event, ["id" => $event['id']]);
-			$response['Messages'][] = "Updated event schedule. ".json_encode($event);
-		}
+    	//delete old events for this listing
+    	$events_table = $wpdb->prefix."mylisting_events";
+    	$event_sql = $wpdb->prepare("
+    		DELETE FROM $events_table WHERE listing_id = %d
+    	", $post_id);
+    	$wpdb->query($event_sql);
+
+    	foreach ($event['start_date'] as $key => $value) {
+    		$e = [];
+    		$e['listing_id'] = $post_id;
+			$e['field_key'] = 'deal-dates';
+			if(empty($event['repeat_unit'][$key]))
+			{
+				$e['repeat_unit'] = "NONE";
+			}
+			else
+			{
+				$e['repeat_unit'] = $event['repeat_unit'][$key];
+			}
+			if(empty($event['start_date'][$key]))
+			{
+				$response['Messages'][] = "Empty start_date not allowed";
+				return;
+			}
+			$e['start_date'] = $event['start_date'][$key];
+			if(empty($event['end_date'][$key]))
+			{
+				$response['Messages'][] = "Empty end_date not allowed";
+				return;
+			}
+			$e['end_date'] = $event['end_date'][$key];
+			if(empty($event['repeat_end'][$key]))
+			{
+				$response['Messages'][] = "Empty repeat_until not allowed";
+				return;
+			}
+			$e['repeat_end'] = $event['repeat_end'][$key];
+			if(empty($event['frequency'][$key]))
+			{
+				$response['Messages'][] = "Empty frequency not allowed";
+				return;
+			}
+			$e['frequency'] = $event['frequency'][$key];
+			$wpdb->insert($events_table, $e);
+			$response['Messages'][] = "Inserted event schedule. ".json_encode($e);
+    	}
     }
 
     private function save_work_hours($post_id, $request, &$response){
     	
     	$days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    	$timezone = 'America/Los_Angeles';    	
+    	$timezone = '';    	
     	$work_hours = get_post_meta($post_id, '_work_hours', true);
 
     	$work_hours = (array)$work_hours;
-
     	if(empty($work_hours['Monday']))
     	{
     		$work_hours = [];
@@ -570,33 +752,59 @@ class RestSettings
     				'status' => 'closed-all-day'
     			];
     		}
-    		$work_hours["timezone"] = $timezone;
+    		$work_hours["timezone"] = 'America/Los_Angeles';
     		add_post_meta($post_id, '_work_hours', $work_hours);
     		$response['Messages'][] = "Added work_hours: ".json_encode($work_hours);
     	}
 
     	$should_update_hours = FALSE;
-
+    	
     	if(!empty($request['Timezone__c']))
+    	{
+    		$timezone = $request['Timezone__c'];
+    	}
+
+    	if(Utils::is_valid_time_zone($timezone))
     	{
     		$work_hours['timezone'] = $timezone;
     		$should_update_hours = TRUE;
+    	}
+    	else if(!empty($timezone))
+    	{
+    		$response['Messages'][] = "Invalid timezone $timezone";
     	}
 
     	foreach($days as $day)
     	{
     		$status = "";
     		$duration = array();
-
+    		$open_time = "";
+    		$close_time = "";
     		if(!empty($request[$day."_Open__c"]))
+    		{
+    			$open_time = $request[$day."_Open__c"];
+    		}
+    		if(!empty($request[$day."_Close__c"]))
+    		{
+    			$close_time = $request[$day."_Close__c"];
+    		}
+    		if(Utils::is_valid_time($open_time))
     		{
     			$status = "enter-hours";
     			$duration["from"] = Utils::am_pm_to_24($request[$day."_Open__c"]);
     		}
-    		if(!empty($request[$day."_Close__c"]))
+    		else
+    		{
+    			$response['Messages'][] = "Invalid open_time for $day $open_time";
+    		}
+    		if(Utils::is_valid_time($close_time))
     		{
     			$status = "enter-hours";
     			$duration["to"] = Utils::am_pm_to_24($request[$day."_Close__c"]);
+    		}
+    		else
+    		{
+    			$response['Messages'][] = "Invalid close_time for $day $close_time";
     		}
     		
     		if(empty($duration))

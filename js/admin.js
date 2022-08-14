@@ -1,7 +1,9 @@
 jQuery(function($){
 	var container = $(CustomWpZapier.container);
-	var fieldsTable = container.find("#wp-custom-zapier-field-mappings");
+	var fieldsTable = container.find("#wp-custom-zapier-field-mappings tbody");
 	var dataService = CustomWpZapier.dataService;
+	var mappingForm = container.find(".wp-custom-zapier-field-mappings-form");
+	var btnAddMapping  = container.find("#add-mapping");
 	container.on("click", "#submit", function(){
 		var data = getData();
 		dataService.post('/save-settings', data.data).done(function(data){
@@ -19,16 +21,67 @@ jQuery(function($){
 		fieldsTable.find('tbody tr').each(function(){
 			if($(this).text().toLowerCase().indexOf(search) > -1)
 			{
-				$(this).show();
+				$(this).addClass("hidden");
 			}
 			else
 			{
-				$(this).hide();
+				$(this).removeClass("hidden");
 			}
 		});
 	});
 
+	container.on("click", "#save-mapping", function()
+	{
+		if(!validate())
+		{
+			return;
+		}
+		var data = {
+			"ApiFieldName": mappingForm.find("#wp_zapier_form_api_field").val(),
+			"WpFieldName": mappingForm.find("#wp_zapier_form_wp_field").val(),
+			"Type" : mappingForm.find("#wp_zapier_form_field_type").val()
+		};
+		dataService.post("/save-mapping", data).done(function(){
+			mappingForm.addClass('hidden');
+			btnAddMapping.removeClass("hidden");
+			loadMappings();
+		});		
+	});
+
+	btnAddMapping.on("click", function(){
+		mappingForm.removeClass('hidden');
+		btnAddMapping.addClass("hidden");
+	})
+
 	loadMappings();
+
+	mappingForm.on("keyup", "input", function(){
+		validate();
+	});
+
+	function validate()
+	{
+		var valid = true;
+		if(!mappingForm.find("#wp_zapier_form_api_field").val())
+		{
+			mappingForm.find("#wp_zapier_form_api_field").parent(".form-group").addClass("error");
+			valid = false;
+		}
+		else
+		{
+			mappingForm.find("#wp_zapier_form_api_field").parent(".form-group").removeClass("error");
+		}
+		if(!mappingForm.find("#wp_zapier_form_wp_field").val())
+		{
+			mappingForm.find("#wp_zapier_form_wp_field").parent(".form-group").addClass("error");
+			valid = false;
+		}
+		else
+		{
+			mappingForm.find("#wp_zapier_form_wp_field").parent(".form-group").removeClass("error");
+		}
+		return valid;
+	}
 
 	function loadMappings()
 	{
@@ -36,7 +89,8 @@ jQuery(function($){
 			if(!data.Mappings)
 			{
 				return;
-			} 
+			}
+			fieldsTable.find("tr").remove();
 			populateTable(data.Mappings);			
 		});
 	}
@@ -90,11 +144,19 @@ jQuery(function($){
 			'<button class="pt-5 float-right button button-secondary"><span class="dashicons dashicons-trash"></span></button>'
 		].join("</td><td>") + "</td></tr>");
 		tr.find(".button-primary").on('click', function(){
-			console.log(field, 'edi');
+			mappingForm.removeClass('hidden');
+			mappingForm.find(".search-bar").addClass("hidden");
+			mappingForm.find("#wp_zapier_form_api_field").val(field.Name);
+			mappingForm.find("#wp_zapier_form_wp_field").val(field.MappedTo);
+			mappingForm.find("#wp_zapier_form_field_type").val(field.Type.toLowerCase());
 		});
-		tr.find(".button-secondary").on('click', function(){
-			console.log(field, 'delete');
-		})
+		tr.find(".button-secondary").on('click', function()
+		{
+			dataService.delete("/save-mapping?ApiFieldName=" + field.Name + "&Type=" + field.Type.toLowerCase()).done(function(){
+				tr.remove();
+			});
+		});
+
 		return tr;
 	}
 

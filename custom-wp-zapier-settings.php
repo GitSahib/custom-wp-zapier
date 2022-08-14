@@ -75,6 +75,10 @@ class Settings
                 <div class="row">
                     <div class="col-md-12">
                         <strong>Fields and mappings</strong>
+                        <button id="add-mapping" class="button-primary mt-md-18px float-right">Add Mapping</button>
+                    </div>
+                    <div class="col-md-12">                        
+                        <hr>
                     </div>
                 </div>
                 <div class="row">
@@ -89,12 +93,34 @@ class Settings
     private function print_fields()
     {
     ?>
-      <div class="table-header float-right">
+      <div class="col-md-12 wp-custom-zapier-field-mappings-form hidden">
+          <div class="form-group col-md-3">
+            <label class="control-label">Api Field Name</label>
+            <input type="text" class="form-control" name="api_field" id="wp_zapier_form_api_field">
+          </div>
+          <div class="form-group col-md-3">
+            <label class="control-label">Wordpress Field Name</label>
+            <input type="text" value="" class="form-control" name="wp_field" id="wp_zapier_form_wp_field">
+          </div>
+          <div class="form-group col-md-3">
+            <label class="control-label">Wordpress Field Type</label>
+            <select class="form-control" name="wp_field_type" id="wp_zapier_form_field_type">
+                <option value="post">Post</option>
+                <option value="meta">Post Meta/Custom Field</option>
+                <option value="schedule">Schedule</option>
+                <option value="taxonomy">Taxonomy</option>
+            </select>
+          </div>
+          <div class="form-group col-md-3 text-right">
+              <button id="save-mapping" class="button-primary mt-md-18px">Save Mapping</button>
+          </div>
+      </div>
+      <div class="table-header float-right search-bar">
           <input type="search" name="search" id="search" placeholder="search">
       </div>
       <table class="wp-list-table widefat striped" id="wp-custom-zapier-field-mappings">
           <thead>
-              <tr><th>Field Name</th><th>Api Field</th><th>Field Type</th><th colspan="2">Actions</th></tr>
+              <tr><th>Api Field</th><th>Wordpress Field</th><th>Field Type</th><th colspan="2">Actions</th></tr>
           </thead>
           <tbody></tbody>
           <tfoot></tfoot>

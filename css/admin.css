@@ -55,6 +55,9 @@
     color: #e92d2d;
 }
 
+.wp-custom-zapier-settings-wrap .hidden{
+	display: none !important;
+}
 .wp-custom-zapier-settings-wrap .button-secondary.wp-hide-pw:focus,
 .wp-custom-zapier-settings-wrap .button-secondary.wp-hide-pw:hover{
 	color: #92181c;
@@ -121,6 +124,10 @@
 	width: 41.55%;
 	float: left;
 }
+.wp-custom-zapier-settings-wrap .col-md-4{
+	width: 33.33%;
+	float: left;
+}
 .wp-custom-zapier-settings-wrap .col-md-3{
 	width: 25%;
 	float: left;
@@ -174,6 +181,9 @@
 .wp-custom-zapier-settings-wrap .pt-5{
 	padding-top: 5px;
 }
+.wp-custom-zapier-settings-wrap .mt-md-18px{
+	margin-top: 18px;
+}
 .wp-custom-zapier-settings-wrap .float-right{
 	float: right;
 }
@@ -206,9 +216,13 @@
 	.wp-custom-zapier-settings-wrap .ml-md-5{
 		margin-left: 0;
 	}
+	.wp-custom-zapier-settings-wrap .mt-md-18px{
+		margin-top: 0px;
+	}
+	.wp-custom-zapier-settings-wrap .col-md-10,
 	.wp-custom-zapier-settings-wrap .col-md-6,
 	.wp-custom-zapier-settings-wrap .col-md-5,
-	.wp-custom-zapier-settings-wrap .col-md-10,
+	.wp-custom-zapier-settings-wrap .col-md-4,
 	.wp-custom-zapier-settings-wrap .col-md-3{
 		width: 100%;
 		float: left;

@@ -1,20 +1,20 @@
 <?php
 /**
  * @package CustomWpZapier
- * @version 1.3.0
+ * @version 1.3.3
  */
 /*
 Plugin Name: Custom WP Zapier
 Plugin URI:  https://paktweet.com/plugins/latest/wp-zapier
 Description: Listens to your zapier/api webhooks on [your-wordpress-site]/wp-json/custom-wp-zapier/v1/sf-post-hook endpoint.
-Version: 1.3.0
+Version: 1.3.3
 Author URI: https://www.linkedin.com/in/sahib-khan/
 */
 
 include_once("custom-wp-zapier-dependency-check.php");
 if ( custom_zapier_requirements_met() ) 
 {
-    DEFINE('CUSTOM_WP_ZAPIER_PLUGIN_VERSION', "1.3.0");
+    DEFINE('CUSTOM_WP_ZAPIER_PLUGIN_VERSION', "1.3.3");
     DEFINE('CUSTOM_WP_ZAPIER_PLUGIN_NAME', plugin_basename(__FILE__));
     DEFINE('CUSTOM_WP_ZAPIER_PLUGIN_DIR', plugin_dir_url(__FILE__));
     DEFINE('CUSTOM_WP_ZAPIER_SETTINGS_GROUP', 'CUSTOM_WP_ZAPIER_SETTINGS');
