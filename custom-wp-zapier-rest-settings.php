@@ -145,8 +145,8 @@ class RestSettings
 		$params = Utils::sanitize_post_values(['security_key' => '']);
 		if(empty($params))
 		{
-			$params = Utils::sanitize_header_values(['apiKey' => '']);
-			$params['security_key'] = isset($params['apiKey']) ? $params['apiKey'] : "";
+			$params = Utils::sanitize_header_values(['ApiKey' => '']);
+			$params['security_key'] = isset($params['ApiKey']) ? $params['ApiKey'] : "";
 		}
 		
 		if(!isset($params['security_key']))
