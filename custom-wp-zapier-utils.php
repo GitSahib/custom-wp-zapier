@@ -11,6 +11,26 @@ class Utils
     * Usage example:
     * {fields:array ['a']} # [a => sanitized(value)]
     */
+    static function sanitize_header_values($fields)
+    {
+        $sanitized_header_values = [];
+        $headers = apache_request_headers();
+        foreach ($fields as $key => $value) 
+        {
+            if(isset($headers[$key]))
+            {
+                $sanitized_header_values[$key] = sanitize_text_field($headers[$key]);
+            }
+        }
+        return $sanitized_header_values;
+    }
+
+    /**
+    * Sanitizes the requested fields in the current $_POST array and returns the result.
+    *
+    * Usage example:
+    * {fields:array ['a']} # [a => sanitized(value)]
+    */
     static function sanitize_post_values($fields)
     {
         $sanitized_post_values = [];

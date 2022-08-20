@@ -1,20 +1,20 @@
 <?php
 /**
  * @package CustomWpZapier
- * @version 1.3.3
+ * @version 1.3.4
  */
 /*
 Plugin Name: Custom WP Zapier
 Plugin URI:  https://paktweet.com/plugins/latest/wp-zapier
 Description: Listens to your zapier/api webhooks on [your-wordpress-site]/wp-json/custom-wp-zapier/v1/sf-post-hook endpoint.
-Version: 1.3.3
+Version: 1.3.4
 Author URI: https://www.linkedin.com/in/sahib-khan/
 */
 
 include_once("custom-wp-zapier-dependency-check.php");
 if ( custom_zapier_requirements_met() ) 
 {
-    DEFINE('CUSTOM_WP_ZAPIER_PLUGIN_VERSION', "1.3.3");
+    DEFINE('CUSTOM_WP_ZAPIER_PLUGIN_VERSION', "1.3.4");
     DEFINE('CUSTOM_WP_ZAPIER_PLUGIN_NAME', plugin_basename(__FILE__));
     DEFINE('CUSTOM_WP_ZAPIER_PLUGIN_DIR', plugin_dir_url(__FILE__));
     DEFINE('CUSTOM_WP_ZAPIER_SETTINGS_GROUP', 'CUSTOM_WP_ZAPIER_SETTINGS');
@@ -23,7 +23,16 @@ if ( custom_zapier_requirements_met() )
     include_once("custom-wp-zapier-utils.php"); 
     include_once("custom-wp-zapier-hooks.php");
     include_once("custom-wp-zapier-settings.php"); 
-    include_once("custom-wp-zapier-rest-settings.php"); 
+    include_once("custom-wp-zapier-rest-settings.php");
+    include_once("custom-wp-zapier-user-activity-helper.php");
+    include_once("custom-wp-zapier-user-activity-field-defaults.php");
+    include_once("custom-wp-zapier-user-activity-note.php");
+    include_once("custom-wp-zapier-user-activity-user.php"); 
+    include_once("custom-wp-zapier-user-activity-user-exported.php");
+    include_once("custom-wp-zapier-user-activity-options.php");
+    include_once("custom-wp-zapier-user-activity-query.php"); 
+    include_once("custom-wp-zapier-user-activity-user-query.php");
+    include_once("custom-wp-zapier-user-activity.php"); 
     register_activation_hook( __FILE__, 'custom_wp_zapier_admin_notice_activation_hook' );
     register_deactivation_hook( __FILE__, 'custom_wp_zapier_admin_notice_deactivation_hook' ); 
     register_uninstall_hook( __FILE__, 'custom_wp_zapier_admin_notice_uninstall_hook'); 

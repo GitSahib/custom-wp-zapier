@@ -7,6 +7,7 @@ use WP_REST_Server;
 use WP_REST_Request;
 use CustomWpZapier\Utils\Utils;
 use CustomWpZapier\Mappings\Mappings;
+use CustomWpZapier\UserActivity\UserActivity;
 if ( ! function_exists( 'post_exists' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/post.php' );
 }
@@ -34,6 +35,8 @@ class RestSettings
 	    $this->api_post_fields     = Mappings::api_post_fields();
 	    $this->api_related_listings_fields = Mappings::api_related_listings_fields();
 	}
+
+
 	public function custom_wp_zappier_rest_api_init()
 	{
 
@@ -96,6 +99,39 @@ class RestSettings
 	            )
 	        )
 	    );
+
+	    register_rest_route( $namespace,
+	        '/user-insights',
+	        array( 
+	            array(
+	                'methods' => WP_REST_Server::READABLE,
+	                'callback' => array($this, 'user_insights'),
+	                'permission_callback' => [$this, 'check_security_key']
+	            )
+	        )
+	    );
+
+	    register_rest_route( $namespace,
+	        '/user-activity',
+	        array( 
+	            array(
+	                'methods' => WP_REST_Server::READABLE,
+	                'callback' => array($this, 'user_activity'),
+	                'permission_callback' => [$this, 'check_security_key']
+	            )
+	        )
+	    );
+
+	    register_rest_route( $namespace,
+	        '/user-list',
+	        array( 
+	            array(
+	                'methods' => WP_REST_Server::READABLE,
+	                'callback' => array($this, 'user_list'),
+	                'permission_callback' => [$this, 'check_security_key']
+	            )
+	        )
+	    );
 	}	
 	
 	public function check_nonce(WP_REST_Request $request)
@@ -107,16 +143,55 @@ class RestSettings
     public function check_security_key(WP_REST_Request $request)
 	{
 		$params = Utils::sanitize_post_values(['security_key' => '']);
-		if(empty($params['security_key']))
+		if(empty($params))
+		{
+			$params = Utils::sanitize_header_values(['apiKey' => '']);
+			$params['security_key'] = isset($params['apiKey']) ? $params['apiKey'] : "";
+		}
+		
+		if(!isset($params['security_key']))
 		{
 			return FALSE;
 		}
+
 		$settings = (array)get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
 		if(empty($settings['security_key']))
 		{
 			return FALSE;
 		}
         return $settings['security_key'] === $params['security_key'];
+    }
+
+    public function user_insights()
+    {
+    	$options = Utils::sanitize_get_values([
+    			'order' => '',
+    			'orderby' => '',
+				'page' => '',
+				'users_per_page' => ''
+		]);
+		$activity = new UserActivity(null);
+    	return rest_ensure_response($activity->get_insights($options));
+    }
+
+    public function user_activity()
+    {
+    	$args = Utils::sanitize_get_values(['user_id' => '']);
+    	if(!isset($args['user_id']))
+    	{
+    		return rest_ensure_response([
+    			'Status' => "Bad Request",
+    			'Messages' => 'user_id was not provided'
+    		]);
+    	}
+    	$activity = new UserActivity($args['user_id']);
+    	return rest_ensure_response($activity->get_activity());
+    }
+
+    public function user_list()
+    {
+    	$activity = new UserActivity(null);
+    	return rest_ensure_response($activity->get_users());
     }
 
 	public function save_settings(WP_REST_Request $request)
