@@ -48,15 +48,21 @@ class UserActivity{
 	    
 	    //let's add the billing_coutry to our meta fields in our query
 	    $query->query_fields .= ",
-		 JSON_OBJECT(
-	      	'field_name', m.meta_key,
-	      	'field_vaue', m.meta_value
-	    ) 	AS user_metadata";
-	    //now we add a left join to actually gather the meta our users
-	    $query->query_from .= " LEFT JOIN $wpdb->usermeta m ON $wpdb->users.ID = ".
-	        "m.user_id";
-
-	    $query->query_where .= " GROUP BY user_login";
+	    (SELECT meta_value FROM wp_usermeta WHERE meta_key = 'first_name' AND user_id = wp_users.ID) AS first_name,
+	    (SELECT meta_value FROM wp_usermeta WHERE meta_key = 'last_name' AND user_id = wp_users.ID) AS last_name,
+	    user_registered,
+	    (SELECT meta_value from wp_posts
+		 INNER JOIN wp_usermeta ON CONCAT('af_c_f_additional_', wp_posts.ID) = wp_usermeta.meta_key 
+		 WHERE post_type = 'af_c_fields' and post_name = 'birthdate' AND wp_usermeta.user_id = wp_users.ID
+		) AS birth_date,
+		(SELECT CONCAT('https://www.honeypottt.com/wp-content/uploads/addify-custom-fields/', meta_value) from wp_posts
+		  INNER JOIN wp_usermeta ON CONCAT('af_c_f_additional_', wp_posts.ID) = wp_usermeta.meta_key 
+		  WHERE post_type = 'af_c_fields' and post_name = 'upload-id' AND wp_usermeta.user_id = wp_users.ID
+		  ) AS upload_id,
+		(SELECT meta_value from wp_posts
+		   INNER JOIN wp_usermeta ON CONCAT('af_c_f_additional_', wp_posts.ID) = wp_usermeta.meta_key 
+		   WHERE post_type = 'af_c_fields' and post_name = 'zip-code' AND wp_usermeta.user_id = wp_users.ID
+		) AS zip_code";
 	}
 
 	public function get_insights($options = []){
@@ -130,7 +136,7 @@ class UserActivity{
 						$post_title .= " ($status->label)";
 					}
 				}
-				$list[]=array('title'=>$post_title, 'link'=>get_permalink($post->ID));
+				$list[]=array('title'=>$post_title, 'date_created' => $post->post_date, 'link'=>get_permalink($post->ID));
 			}
 
 			return array(
@@ -170,7 +176,7 @@ class UserActivity{
 			$comments = get_comments($com_args);
 			foreach ($comments as $comment) {
 				$content = wp_html_excerpt( $comment->comment_content, 40, ' [...]');
-				$list[]=array('title'=>$content, 'link'=>get_permalink($comment->comment_post_ID));
+				$list[]=array('title'=>$content, 'date_created' => $comment->comment_date, 'link'=>get_permalink($comment->comment_post_ID));
 			}
 
 			return array(

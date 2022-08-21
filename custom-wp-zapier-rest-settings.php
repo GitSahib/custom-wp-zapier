@@ -8,6 +8,7 @@ use WP_REST_Request;
 use CustomWpZapier\Utils\Utils;
 use CustomWpZapier\Mappings\Mappings;
 use CustomWpZapier\UserActivity\UserActivity;
+use MyListing\Ext\Visits\Visits;
 if ( ! function_exists( 'post_exists' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/post.php' );
 }
@@ -132,6 +133,17 @@ class RestSettings
 	            )
 	        )
 	    );
+
+	    register_rest_route( $namespace,
+	        '/listing-stats',
+	        array( 
+	            array(
+	                'methods' => WP_REST_Server::READABLE,
+	                'callback' => array($this, 'listing_stats'),
+	                'permission_callback' => [$this, 'check_security_key']
+	            )
+	        )
+	    );
 	}	
 	
 	public function check_nonce(WP_REST_Request $request)
@@ -145,8 +157,8 @@ class RestSettings
 		$params = Utils::sanitize_post_values(['security_key' => '']);
 		if(empty($params))
 		{
-			$params = Utils::sanitize_header_values(['ApiKey' => '']);
-			$params['security_key'] = isset($params['ApiKey']) ? $params['ApiKey'] : "";
+			$params = Utils::sanitize_header_values(['Apikey' => '']);			
+			$params['security_key'] = isset($params['Apikey']) ? $params['Apikey'] : "";
 		}
 		
 		if(!isset($params['security_key']))
@@ -192,6 +204,16 @@ class RestSettings
     {
     	$activity = new UserActivity(null);
     	return rest_ensure_response($activity->get_users());
+    }
+
+    public function listing_stats()
+    {
+    	$args = Utils::sanitize_get_values([
+    		'user_id' => '',
+    		'listing_id' => '',   		
+    	]);
+    	$visits = new Visits();
+    	return rest_ensure_response($visits->get_grouped_stats($args));
     }
 
 	public function save_settings(WP_REST_Request $request)
@@ -339,7 +361,8 @@ class RestSettings
 		$api_meta_fields = $this->api_meta_fields;
 		$meta_key = $api_meta_fields['Request_ID_18_Digit'];
 		$meta_value = $request['Request_ID_18_Digit'];
- 		
+		$listing_type = isset($request['Listing_Type__c']) ? $request['Listing_Type__c'] : "Deals";
+
 		$post_sql = $wpdb->prepare("
 			SELECT p.id 
 			FROM $wpdb->posts p
@@ -347,10 +370,20 @@ class RestSettings
 			WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status != 'trash'",
 			$meta_key, $meta_value
 		);
+
+		$listing_type_sql = $wpdb->prepare("
+			SELECT p.post_name 
+			FROM $wpdb->posts p
+			WHERE p.post_type = 'case27_listing_type' AND p.post_title = %s",
+			$listing_type
+		);
 		
 		$this->debugSQL($response, $post_sql);
+		$this->debugSQL($response, $listing_type_sql);
         //get the post id
         $post_id = $wpdb->get_var($post_sql);
+        //get listing type
+        $listing_type = $wpdb->get_var($listing_type_sql);
         
         //we can't create a post the empty title
         if(empty($post_id) && empty($request['Ad_Title__c']))
@@ -400,7 +433,7 @@ class RestSettings
 		        'post_content' => $post_content,
 		        'post_author' => $post_author
 		    ));
-		    add_post_meta($post_id, '_case27_listing_type' , 'deals' );
+		    add_post_meta($post_id, '_case27_listing_type' , empty($listing_type) ? 'deals' : $listing_type);
 		    $response['Messages'][] = "New deal id $post_id with author $post_author";
 		    $should_update_status = FALSE;
 		}
@@ -481,7 +514,7 @@ class RestSettings
     	foreach ($api_meta_fields as $f => $m) 
     	{
     		//if no mapping is found or the field is not posted then get back
-    		if(empty($m) || !isset($request[$f]))
+    		if(empty($m) || !isset($request[$f]) || $m == "_case27_listing_type")
     		{
     			continue;
     		}

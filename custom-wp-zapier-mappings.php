@@ -30,7 +30,8 @@ class Mappings
             'Deal_Terms__c' => '_terms-conditions',
             'Promotion_Expiration_Date__c' => '_job_expires',
             'Priority__c' => '_featured',
-            'Verification_Status__c' => '_claimed'
+            'Verification_Status__c' => '_claimed',
+            'Listing_Type__c' => '_case27_listing_type'
         );
     }
 
