@@ -18,14 +18,20 @@ jQuery(function($){
 	container.on("keyup", "#search", function()
 	{
 		var search = $(this).val().toLowerCase();
-		fieldsTable.find('tbody tr').each(function(){
-			if($(this).text().toLowerCase().indexOf(search) > -1)
+		if(!search){
+			fieldsTable.find("tr").removeClass("hidden");
+			return;
+		}
+
+		fieldsTable.find('tr').each(function(){
+		
+			if($(this).text().toLowerCase().indexOf(search.toLowerCase()) > -1)
 			{
-				$(this).addClass("hidden");
+				$(this).removeClass("hidden");
 			}
 			else
 			{
-				$(this).removeClass("hidden");
+				$(this).addClass("hidden");
 			}
 		});
 	});
