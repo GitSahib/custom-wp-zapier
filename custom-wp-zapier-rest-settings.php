@@ -312,7 +312,8 @@ class RestSettings
 
     public function save_sf_post()
     {  
-        $request = Utils::sanitize_post_values( $this->get_mapped_fields() );        
+    	$mappings = $this->build_mappings();
+        $request = Utils::sanitize_post_values( $mappings );        
         $response = array(
             'Status' => 1,
             'Messages' => [],
@@ -331,6 +332,23 @@ class RestSettings
         $this->save_related_listings($post_id, $request, $response);
         $this->code_address($post_id, $request, $response);
         return rest_ensure_response($response);
+    }
+
+    private function build_mappings()
+    {
+    	$settings = get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
+        $mappings = [];
+        if(empty($settings) || !isset($settings['Mappings']))
+        {
+        	return $this->get_mapped_fields();
+        }
+
+        foreach($settings['Mappings'] as $type => $map)
+        {
+        	$mappings += $map;
+        }
+
+        return $mappings;
     }
 
     private function get_mapped_fields()

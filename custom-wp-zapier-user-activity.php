@@ -32,7 +32,7 @@ class UserActivity{
 	{
 		$number = isset($options['users_per_page']) ? $options['users_per_page'] : 20;
 		$offset = 0;
-		$fields = array( 'user_login', 'user_nicename', 'display_name', 'user_registered' );
+		$fields = array( 'user_login', 'user_email', 'user_nicename', 'display_name', 'user_registered' );
 		if(isset($options['page']) && $options['page'] != 1)
 		{
 			$offset = $this->get_query_offset($options['page'], $number);
@@ -77,7 +77,20 @@ class UserActivity{
 		}
 
 		$user_query = new UserActivity_User_Query($args, null);
-		$users = $user_query->get_users();
+		$fields = [
+		    "username",
+		    "user_groups",
+		    "email",
+		    "registered",
+		    "role",
+		    "posts",
+		    "last_seen",
+		    "sessions",
+		    "browser",
+		    "country",
+		    "city"
+		];
+		$users = $user_query->get_users($fields);
 		return $users;
 	}
 

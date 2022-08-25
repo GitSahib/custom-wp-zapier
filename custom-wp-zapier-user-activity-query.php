@@ -303,7 +303,7 @@ class UserActivity_Query{
 					case 'tt':
 						//user groups
 						$this->query_joins.= " LEFT JOIN $wpdb->term_relationships rel ON $wpdb->users.ID = rel.object_id";
-						$this->query_joins.= " LEFT JOIN $wpdb->term_taxonomy tt ON rel.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = '".USIN_GROUPS::$slug."'";
+						$this->query_joins.= " LEFT JOIN $wpdb->term_taxonomy tt ON rel.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'usin_group'";
 						if(isset($this->args['export'])){
 							//we need the term names for the export
 							$this->query_joins.= " LEFT JOIN $wpdb->terms wpt ON tt.term_id = wpt.term_id";
