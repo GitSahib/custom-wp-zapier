@@ -97,6 +97,7 @@ class Settings
           <div class="form-group col-md-3">
             <label class="control-label">Api Field Name</label>
             <input type="text" class="form-control" name="api_field" id="wp_zapier_form_api_field">
+            <input type="hidden" class="form-control" name="api_field" id="wp_zapier_form_api_old_field">
           </div>
           <div class="form-group col-md-3">
             <label class="control-label">Wordpress Field Name</label>
@@ -107,8 +108,8 @@ class Settings
             <select class="form-control" name="wp_field_type" id="wp_zapier_form_field_type">
                 <option value="post">Post</option>
                 <option value="meta">Post Meta/Custom Field</option>
-                <option value="schedule">Schedule</option>
                 <option value="taxonomy">Taxonomy</option>
+                <option value="serialized">JSON</option>
             </select>
           </div>
           <div class="form-group col-md-3 text-right">

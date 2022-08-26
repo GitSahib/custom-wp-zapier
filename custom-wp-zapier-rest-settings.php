@@ -25,6 +25,7 @@ class RestSettings
     private $api_workhour_fields = array();
     private $api_taxonomy_fields = array();
     private $api_post_fields     = array();
+    private $api_serialized_fields = array();
     private $api_related_listings_fields = array();
 	public function __construct()
 	{
@@ -251,15 +252,7 @@ class RestSettings
         $settings = get_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP);
         if(!isset($settings['Mappings']))
         {
-            $settings['Mappings'] = [
-        		'taxonomy' => Mappings::api_taxonomy_fields(),
-        		'meta' => array_merge(
-        				Mappings::api_meta_fields(), 
-        				Mappings::api_workhour_fields()
-        		),
-        		'post' => Mappings::api_post_fields(),
-        		'schedule' => Mappings::api_schedule_fields()
-        	];
+            $settings['Mappings'] = $this->get_mapped_fields();
         	update_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP, $settings);
         }
         $response['Mappings'] = $settings['Mappings'];
@@ -269,6 +262,7 @@ class RestSettings
     public function save_mapping(WP_REST_Request $request)
     {
     	$request = Utils::sanitize_post_values([
+    		'ApiOldFieldName' => '',
     		'ApiFieldName' => '', 
     		'WpFieldName' => '',
     		'Type' => ''
@@ -284,6 +278,13 @@ class RestSettings
         {
         	$mappings[$request['Type']] = [];
         }
+
+        //edit
+        if(isset($request['ApiOldFieldName']) && isset($mappings[$request['Type']][$request['ApiOldFieldName']]))
+        {
+        	unset($mappings[$request['Type']][$request['ApiOldFieldName']]);
+        }
+
         $mappings[$request['Type']][$request['ApiFieldName']] = $request['WpFieldName'];
         $settings['Mappings'] = $mappings;
         update_option(CUSTOM_WP_ZAPIER_SETTINGS_GROUP, $settings);
@@ -313,11 +314,17 @@ class RestSettings
     public function save_sf_post()
     {  
     	$mappings = $this->build_mappings();
-        $request = Utils::sanitize_post_values( $mappings );        
+    	$this->api_meta_fields = $mappings['meta'];
+    	$this->api_post_fields = $mappings['post'];
+    	$this->api_taxonomy_fields = $mappings['taxonomy'];
+    	$this->api_serialized_fields = $mappings['serialized'];
+
+        $request = Utils::sanitize_post_values( $this->get_all_mappings() );   
         $response = array(
             'Status' => 1,
             'Messages' => [],
-            'DataRecieved' => $request
+            'DataRecieved' => $request,
+            'mappings' => $this->get_all_mappings()
         );        
         $post_id = $this->save_or_update_post($request, $response);
         //stop processing if no post was found or created
@@ -342,24 +349,31 @@ class RestSettings
         {
         	return $this->get_mapped_fields();
         }
+        
+        return $settings['Mappings'];
+    }
 
-        foreach($settings['Mappings'] as $type => $map)
-        {
-        	$mappings += $map;
-        }
-
-        return $mappings;
+    private function get_all_mappings(){
+    	
+    	$all_fields = array_merge(
+    		$this->api_meta_fields,
+    		$this->api_post_fields,
+    		$this->api_taxonomy_fields,
+    		$this->api_workhour_fields,
+    		$this->api_schedule_fields,
+    		$this->api_serialized_fields,
+    		$this->api_related_listings_fields
+    	);
+    	return $all_fields;
     }
 
     private function get_mapped_fields()
 	{
-		return array_merge(
-			$this->api_post_fields,
-			$this->api_meta_fields,
-			$this->api_taxonomy_fields,
-			$this->api_schedule_fields,
-			$this->api_workhour_fields,			
-			$this->api_related_listings_fields
+		return array(
+			'post' => $this->api_post_fields,
+			'meta' => $this->api_meta_fields,
+			'taxonomy' => $this->api_taxonomy_fields,
+			'serialized' => $this->api_serialized_fields
 		);
 	}
 
@@ -524,11 +538,12 @@ class RestSettings
 
     private function save_post_meta($post_id, $request, &$response)
     {
-    	$api_meta_fields = $this->api_meta_fields;
+    	$api_meta_fields = $this->api_meta_fields + $this->api_serialized_fields;
     	$url_fields   = ['Wordpress_Account_Listing_Id__c', 'Menu__c', 'Website__c'];
     	$date_fields  = ['Promotion_Expiration_Date__c'];
     	$array_fields = ['Wordpress_Banner_URL_from_Account__c'];
     	$int_fields   = ['Priority__c'];
+    	$serialized_fields = $this->api_serialized_fields;
     	foreach ($api_meta_fields as $f => $m) 
     	{
     		//if no mapping is found or the field is not posted then get back
@@ -566,6 +581,11 @@ class RestSettings
  				$request[$f] = array_map(function($field){ 
  					return trim($field);
  				}, explode(",", $request[$f]));
+ 			}
+
+ 			if(isset($serialized_fields[$f]) && Utils::is_json($request[$f]))
+ 			{
+ 				$request[$f] = json_decode(stripslashes($request[$f]));
  			}
 
 			$this->save_or_update_post_meta($post_id, $api_meta_fields[$f] , $request[$f]);			

@@ -45,7 +45,8 @@ jQuery(function($){
 		var data = {
 			"ApiFieldName": mappingForm.find("#wp_zapier_form_api_field").val(),
 			"WpFieldName": mappingForm.find("#wp_zapier_form_wp_field").val(),
-			"Type" : mappingForm.find("#wp_zapier_form_field_type").val()
+			"Type" : mappingForm.find("#wp_zapier_form_field_type").val(),
+			"ApiOldFieldName": mappingForm.find("#wp_zapier_form_api_old_field").val()
 		};
 		dataService.post("/save-mapping", data).done(function(){
 			mappingForm.addClass('hidden');
@@ -106,9 +107,9 @@ jQuery(function($){
 		{
 			populateFields(mappings.post, "Post");
 		}	
-		if(mappings.schedule)
+		if(mappings.serialized)
 		{
-			populateFields(mappings.schedule, "Schedule");
+			populateFields(mappings.serialized, "serialized", "JSON");
 		}
 		if(mappings.taxonomy)
 		{
@@ -117,35 +118,27 @@ jQuery(function($){
 		if(mappings.meta)
 		{
 			populateFields(mappings.meta, "Meta");
-		}	
+		}
 	}
  
-	function populateFields(fields, type)
+	function populateFields(fields, type, display)
 	{ 
 		for(var f in fields)
 		{
 			field = {};
-			if(!isNaN(parseInt(f)))
-			{
-				field.Name = fields[f];
-				field.MappedTo = "_work_hours";
-			}
-			else
-			{
-				field.Name = f;
-				field.MappedTo = fields[f];
-			}
+			field.Name = f;
+			field.MappedTo = fields[f];
 			field.Type = type;			
-			fieldsTable.append(buildRow(field));
+			fieldsTable.append(buildRow(field, display));
 		}
 	}
 
-	function buildRow(field)
+	function buildRow(field, display)
 	{
 		var tr = $("<tr><td>" + [
 			field.Name, 
 			field.MappedTo, 
-			field.Type, 
+			display || field.Type, 
 			'<button class="pt-5 float-right button button-primary"><span class="dashicons dashicons-edit-large"></span></button>',
 			'<button class="pt-5 float-right button button-secondary"><span class="dashicons dashicons-trash"></span></button>'
 		].join("</td><td>") + "</td></tr>");
@@ -153,6 +146,7 @@ jQuery(function($){
 			mappingForm.removeClass('hidden');
 			mappingForm.find(".search-bar").addClass("hidden");
 			mappingForm.find("#wp_zapier_form_api_field").val(field.Name);
+			mappingForm.find("#wp_zapier_form_api_old_field").val(field.Name);
 			mappingForm.find("#wp_zapier_form_wp_field").val(field.MappedTo);
 			mappingForm.find("#wp_zapier_form_field_type").val(field.Type.toLowerCase());
 		});

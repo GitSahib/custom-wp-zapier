@@ -6,6 +6,17 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 class Utils
 {
     /**
+    * Checks if the provided string is a valid json.
+    *
+    * Usage example:
+    * "{fields:array ['a']}" # TRUE
+    * "{lsdjfl" # FALSE
+    */
+    static function is_json($string) {
+       json_decode(stripslashes($string));
+       return json_last_error() === JSON_ERROR_NONE;
+    }
+    /**
     * Sanitizes the requested fields in the current $_POST array and returns the result.
     *
     * Usage example:
