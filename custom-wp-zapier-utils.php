@@ -32,6 +32,14 @@ class Utils
             {
                 $sanitized_header_values[$key] = sanitize_text_field($headers[$key]);
             }
+            else if(isset($headers[strtolower($key)]))
+            {
+                $sanitized_header_values[$key] = sanitize_text_field($headers[strtolower($key)]);
+            }
+            else if(isset($headers[strtoupper($key)]))
+            {
+                $sanitized_header_values[$key] = sanitize_text_field($headers[strtoupper($key)]);
+            }
         }
         return $sanitized_header_values;
     }
