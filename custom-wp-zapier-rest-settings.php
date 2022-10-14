@@ -9,6 +9,7 @@ use CustomWpZapier\Utils\Utils;
 use CustomWpZapier\Mappings\Mappings;
 use CustomWpZapier\UserActivity\UserActivity;
 use MyListing\Ext\Visits\Visits;
+use CustomWpZapier\UserActivity\UserActivity_Options;
 if ( ! function_exists( 'post_exists' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/post.php' );
 }
@@ -325,7 +326,7 @@ class RestSettings
             'Messages' => [],
             'DataRecieved' => $request,
             'mappings' => $this->get_all_mappings()
-        );        
+        );
         $post_id = $this->save_or_update_post($request, $response);
         //stop processing if no post was found or created
         if(empty($post_id))
@@ -364,6 +365,10 @@ class RestSettings
     		$this->api_serialized_fields,
     		$this->api_related_listings_fields
     	);
+    	if(!isset($all_fields['Listing_Type__c']))
+    	{
+    		$all_fields['Listing_Type__c'] = "";
+    	}
     	return $all_fields;
     }
 

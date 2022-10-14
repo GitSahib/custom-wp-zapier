@@ -32,13 +32,14 @@ class UserActivity{
 	{
 		$number = isset($options['users_per_page']) ? $options['users_per_page'] : 20;
 		$offset = 0;
-		$fields = array( 'user_login', 'user_email', 'user_nicename', 'display_name', 'user_registered' );
+		$fields = array();
 		if(isset($options['page']) && $options['page'] != 1)
 		{
 			$offset = $this->get_query_offset($options['page'], $number);
 		}
 		add_action( 'pre_user_query', [$this, 'add_meta_query'] );
 		$user_query = new \WP_User_Query( array( 'number' => $number, 'offset' => $offset, 'fields' => $fields ) );
+		//print_r($user_query);
 		remove_action( 'pre_user_query', [$this, 'add_meta_query'] ); 
 		return $user_query->results;
 	}
@@ -47,7 +48,13 @@ class UserActivity{
 	    global $wpdb;
 	    
 	    //let's add the billing_coutry to our meta fields in our query
-	    $query->query_fields .= ",
+	    $query->query_fields = "
+	    ID AS id,
+	    user_email, 
+		user_nicename, 
+		display_name, 
+		user_registered,
+		user_login AS username, 
 	    (SELECT meta_value FROM wp_usermeta WHERE meta_key = 'first_name' AND user_id = wp_users.ID) AS first_name,
 	    (SELECT meta_value FROM wp_usermeta WHERE meta_key = 'last_name' AND user_id = wp_users.ID) AS last_name,
 	    user_registered,
@@ -87,6 +94,8 @@ class UserActivity{
 		    "last_seen",
 		    "sessions",
 		    "browser",
+		    "platform",
+		    "region",
 		    "country",
 		    "city"
 		];
